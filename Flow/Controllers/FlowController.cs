@@ -23,9 +23,12 @@ namespace Flow.Controllers
         public async Task<HttpResponseMessage> Get(string projectId, string codename)
         {
             // => Ok(await GetDataForPublish(projectId, codename));
+            var content = await GetDataForPublish(projectId, codename);
+            content = content.Replace("\n", "");
+            content = content.Replace("&nbsp", " ");
             var response = Request.CreateResponse(HttpStatusCode.OK);
             response.Content = new StringContent(
-                await GetDataForPublish(projectId, codename),
+                content,
                 Encoding.UTF8,
                 "application/json"
             );
@@ -111,6 +114,15 @@ namespace Flow.Controllers
                     var strippedText = StripHtml(value);
                     str.Append('"' + result.Name + '"' + ":" + '"' + strippedText + '"');
                 }
+
+                /*if (type.Equals("asset"))
+                {
+                    if (result.First.value[0].type.ToString().Contains("image"))
+                    {
+                        str.Append('"' + result.Name + '"' + ":" + '"' + result.First.value[0].url + '"');
+                    }
+                }*/
+
                 else
                 {
                     if (!value[0].ToString().Equals("["))
