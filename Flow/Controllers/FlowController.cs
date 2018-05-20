@@ -22,7 +22,6 @@ namespace Flow.Controllers
         [Route("api/v1/sample/{projectId}/{codename}")]
         public async Task<HttpResponseMessage> Get(string projectId, string codename)
         {
-            // => Ok(await GetDataForPublish(projectId, codename));
             var content = await GetDataForPublish(projectId, codename);
             content = content.Replace("\n", "");
             content = content.Replace("&nbsp", " ");
@@ -47,7 +46,9 @@ namespace Flow.Controllers
                 codename
             );
 
-            if (webhook.Message.Operation != "publish" || targetUrl == null)
+            if (webhook.Message.Operation != "publish" 
+                && (webhook.Message.Type != "content_item_variant" || webhook.Message.Type != "content_item") 
+                || targetUrl == null)
             {
                 return await Task.FromResult(StatusCode(HttpStatusCode.NoContent));
             }
@@ -66,27 +67,13 @@ namespace Flow.Controllers
                 targetUrl,
                 content);
 
-            var content2 = new StringContent(
-                str,
-                Encoding.UTF8,
-                "application/json"
-            );
-
-            await httpClient.PostAsync(
-                "https://webhook.site/1ba1f168-060f-4af6-9855-279f7ce7e230",
-                content2);
-
             return await Task.FromResult(StatusCode(HttpStatusCode.OK));
         }
 
         [Route("api/v1/flow")]
         public async Task<IHttpActionResult> Post(FlowData flowData)
         {
-            var noData = _flowInfoService.GetUrl(flowData.ProjectId, flowData.Codename);
-
             _flowInfoService.AddFlowInfo(flowData);
-
-            var data = _flowInfoService.GetUrl(flowData.ProjectId, flowData.Codename);
 
             return await Task.FromResult(StatusCode(HttpStatusCode.Accepted));
         }
@@ -102,7 +89,6 @@ namespace Flow.Controllers
             foreach (var result in children)
             {
                 var type = result.First.type.ToString();
-                var name = result.Name;
                 var value = result.First.value.ToString();
                 if (type.Equals("multiple_choice"))
                 {
@@ -114,14 +100,6 @@ namespace Flow.Controllers
                     var strippedText = StripHtml(value);
                     str.Append('"' + result.Name + '"' + ":" + '"' + strippedText + '"');
                 }
-
-                /*if (type.Equals("asset"))
-                {
-                    if (result.First.value[0].type.ToString().Contains("image"))
-                    {
-                        str.Append('"' + result.Name + '"' + ":" + '"' + result.First.value[0].url + '"');
-                    }
-                }*/
 
                 else
                 {
